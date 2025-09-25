@@ -1,0 +1,11 @@
+# Ignorar archivos .class generados
+*.class
+
+# Ignorar la carpeta lib donde está el archivo .jar
+/lib/
+
+# Si tienes alguna carpeta de compilación adicional, como target o build, también se puede agregar:
+target/
+build/
+
+
