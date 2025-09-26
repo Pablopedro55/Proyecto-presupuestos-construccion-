@@ -8,6 +8,22 @@ import java.sql.*;
 import java.util.*;
 
 public class RepositorioActividadesMySQL implements RepositorioActividades {
+    public double calcularCostoMateriales(int actividadId) {
+        double total = 0;
+        try {
+            PreparedStatement ps = conexion.prepareStatement(
+                    "SELECT cantidad * precio_unitario AS subtotal FROM materiales m JOIN catalogo_materiales c ON m.catalogo_id = c.id WHERE m.actividad_id = ?");
+            ps.setInt(1, actividadId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                total += rs.getDouble("subtotal");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return total;
+    }
+
     private final Connection conexion;
 
     public RepositorioActividadesMySQL(Connection conexion) {

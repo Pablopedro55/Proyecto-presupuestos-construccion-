@@ -6,6 +6,14 @@ import dominio.repositorio.RepositorioManoObra;
 import java.util.List;
 
 public class ServicioManoObra {
+    public void agregarManoObraAsignada(int actividadId, int catalogoId, double cantidad) {
+        repo.agregarManoObraAsignada(actividadId, catalogoId, cantidad);
+    }
+
+    public List<dominio.ManoObraAsignada> listarPorActividad(int actividadId) {
+        return repo.listarManoObraPorActividad(actividadId);
+    }
+
     private final RepositorioManoObra repo;
 
     public ServicioManoObra(RepositorioManoObra repo) {

@@ -20,6 +20,9 @@ public class VentanaActividades extends JFrame {
     private ServicioManoObra servicioManoObra;
     private ServicioMaquinaria servicioMaquinaria;
     private ServicioEjecucion servicioEjecucion;
+    private RepositorioActividadesMySQL repoActividades;
+    private RepositorioManoObraMySQL repoManoObra;
+    private RepositorioMaquinariaMySQL repoMaquinaria;
     private int proyectoId;
     private String nombreProyecto;
 
@@ -63,10 +66,13 @@ public class VentanaActividades extends JFrame {
 
         try {
             Connection con = ConexionBD.conectar();
-            servicio = new ServicioPresupuesto(new RepositorioActividadesMySQL(con));
+            repoActividades = new RepositorioActividadesMySQL(con);
+            repoManoObra = new RepositorioManoObraMySQL(con);
+            repoMaquinaria = new RepositorioMaquinariaMySQL(con);
+            servicio = new ServicioPresupuesto(repoActividades);
             servicioMaterial = new ServicioMaterial(new RepositorioMaterialesMySQL(con));
-            servicioManoObra = new ServicioManoObra(new RepositorioManoObraMySQL(con));
-            servicioMaquinaria = new ServicioMaquinaria(new RepositorioMaquinariaMySQL(con));
+            servicioManoObra = new ServicioManoObra(repoManoObra);
+            servicioMaquinaria = new ServicioMaquinaria(repoMaquinaria);
             servicioEjecucion = new ServicioEjecucion(new RepositorioEjecucionesMySQL(con));
         } catch (Exception e) {
             e.printStackTrace();
@@ -100,8 +106,13 @@ public class VentanaActividades extends JFrame {
         double totalEjecutado = 0;
         for (Actividad a : actividades) {
             int ejecuciones = servicioEjecucion.contarEjecuciones(a.getId());
-            double total = ejecuciones * a.getCosto();
-            modelo.addRow(new Object[] { a.getId(), a.getDescripcion(), a.getCosto(), ejecuciones, total });
+            // Calcular el costo real sumando materiales, mano de obra y maquinaria
+            double costoMateriales = repoActividades.calcularCostoMateriales(a.getId());
+            double costoManoObra = repoManoObra.calcularCostoManoObra(a.getId());
+            double costoMaquinaria = repoMaquinaria.calcularCostoMaquinaria(a.getId());
+            double costoTotal = costoMateriales + costoManoObra + costoMaquinaria;
+            double total = ejecuciones * costoTotal;
+            modelo.addRow(new Object[] { a.getId(), a.getDescripcion(), costoTotal, ejecuciones, total });
             totalEjecutado += total;
         }
 
