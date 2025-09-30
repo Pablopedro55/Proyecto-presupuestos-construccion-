@@ -28,7 +28,6 @@ public class VentanaManoObraAsignar extends JFrame {
         JTabbedPane tabs = new JTabbedPane();
         tabs.addTab("Catálogo", crearPanelCatalogo());
         tabs.addTab("Asignados", crearPanelAsignados());
-
         JButton btnVolver = new JButton("Volver");
         btnVolver.addActionListener(e -> dispose());
 
@@ -37,6 +36,61 @@ public class VentanaManoObraAsignar extends JFrame {
 
         add(tabs, BorderLayout.CENTER);
         add(panelInferior, BorderLayout.SOUTH);
+    }
+
+    private void importarManoObraDesdeCSV() {
+        JFileChooser fileChooser = new JFileChooser();
+        int result = fileChooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            java.io.File file = fileChooser.getSelectedFile();
+            try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(file))) {
+                String line;
+                int count = 0, duplicados = 0, errores = 0;
+                java.util.Set<String> existentes = new java.util.HashSet<>();
+                for (var mo : servicio.listar()) {
+                    existentes
+                            .add(mo.getDescripcion().trim().toLowerCase() + ";" + mo.getUnidad().trim().toLowerCase());
+                }
+                boolean primeraLinea = true;
+                while ((line = br.readLine()) != null) {
+                    if (line.trim().isEmpty())
+                        continue;
+                    String[] parts = line.split(";");
+                    if (primeraLinea) {
+                        primeraLinea = false;
+                        if (parts[1].toLowerCase().contains("descripcion"))
+                            continue;
+                    }
+                    if (parts.length < 3) {
+                        errores++;
+                        continue;
+                    }
+                    String descripcion = parts[1].trim();
+                    String unidad = parts[2].trim();
+                    String precioStr = parts.length > 3 ? parts[3].trim().replace(".", "").replace(",", ".") : "0";
+                    double precio;
+                    try {
+                        precio = Double.parseDouble(precioStr);
+                    } catch (NumberFormatException ex) {
+                        errores++;
+                        continue;
+                    }
+                    String clave = descripcion.toLowerCase() + ";" + unidad.toLowerCase();
+                    if (existentes.contains(clave)) {
+                        duplicados++;
+                        continue;
+                    }
+                    servicio.agregar(descripcion, unidad, precio);
+                    existentes.add(clave);
+                    count++;
+                }
+                JOptionPane.showMessageDialog(this,
+                        "Importados: " + count + " | Duplicados: " + duplicados + " | Errores: " + errores);
+                cargarCatalogo();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Error al importar: " + ex.getMessage());
+            }
+        }
     }
 
     private JPanel crearPanelCatalogo() {

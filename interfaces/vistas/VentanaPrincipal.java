@@ -9,15 +9,18 @@ import java.sql.Connection;
 import java.util.List;
 
 import aplicacion.ServicioProyecto;
+import aplicacion.ServicioMaterial;
 import dominio.Proyecto;
 import infraestructura.configuracion.ConexionBD;
 import infraestructura.mysql.RepositorioProyectosMySQL;
+import infraestructura.mysql.RepositorioMaterialesMySQL;
 
 public class VentanaPrincipal extends JFrame {
 
     private JTable tablaProyectos;
     private JButton btnNuevoProyecto, btnVerProyecto;
     private ServicioProyecto servicio;
+    private ServicioMaterial servicioMaterial;
 
     public VentanaPrincipal() {
         setTitle("Gestión de Presupuestos de Obras");
@@ -37,17 +40,16 @@ public class VentanaPrincipal extends JFrame {
         add(panelBotones, BorderLayout.SOUTH);
 
         try {
-            Connection con = ConexionBD.conectar();
-            servicio = new ServicioProyecto(new RepositorioProyectosMySQL(con));
+            Connection con = infraestructura.configuracion.ConexionBD.conectar();
+            servicio = new ServicioProyecto(new infraestructura.mysql.RepositorioProyectosMySQL(con));
+            servicioMaterial = new ServicioMaterial(new RepositorioMaterialesMySQL(con));
         } catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Error conectando a base de datos");
         }
 
         btnNuevoProyecto.addActionListener(e -> new VentanaAgregarProyecto(servicio, this).setVisible(true));
-
         btnVerProyecto.addActionListener(e -> abrirDetalle());
-
         cargarProyectos();
     }
 

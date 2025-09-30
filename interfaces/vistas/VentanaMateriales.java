@@ -41,13 +41,17 @@ public class VentanaMateriales extends JFrame {
     private JPanel crearPanelCatalogo() {
         JPanel panel = new JPanel(new BorderLayout());
 
-        // Filtro + Botón Nuevo
+        // Filtro + Botón Nuevo + Botón Importar
         JPanel topPanel = new JPanel(new BorderLayout());
         JTextField txtBuscar = new JTextField();
+        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton btnNuevo = new JButton("Nuevo Material");
+        JButton btnImportar = new JButton("Importar Materiales");
+        panelBotones.add(btnNuevo);
+        panelBotones.add(btnImportar);
 
         topPanel.add(txtBuscar, BorderLayout.CENTER);
-        topPanel.add(btnNuevo, BorderLayout.EAST);
+        topPanel.add(panelBotones, BorderLayout.EAST);
 
         tablaCatalogo = new JTable();
         cargarCatalogo();
@@ -63,11 +67,22 @@ public class VentanaMateriales extends JFrame {
             cargarCatalogo();
         });
 
+        // Acción del botón Importar
+        btnImportar.addActionListener(e -> importarMaterialesDesdeCSV());
+
         // Búsqueda dinámica
         txtBuscar.getDocument().addDocumentListener(new DocumentListener() {
-            public void insertUpdate(DocumentEvent e) { filtrar(); }
-            public void removeUpdate(DocumentEvent e) { filtrar(); }
-            public void changedUpdate(DocumentEvent e) { filtrar(); }
+            public void insertUpdate(DocumentEvent e) {
+                filtrar();
+            }
+
+            public void removeUpdate(DocumentEvent e) {
+                filtrar();
+            }
+
+            public void changedUpdate(DocumentEvent e) {
+                filtrar();
+            }
 
             private void filtrar() {
                 TableRowSorter<TableModel> sorter = new TableRowSorter<>(tablaCatalogo.getModel());
@@ -78,6 +93,62 @@ public class VentanaMateriales extends JFrame {
         });
 
         return panel;
+    }
+
+    private void importarMaterialesDesdeCSV() {
+        JFileChooser fileChooser = new JFileChooser();
+        int result = fileChooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            java.io.File file = fileChooser.getSelectedFile();
+            try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(file))) {
+                String line;
+                int count = 0, duplicados = 0, errores = 0;
+                java.util.Set<String> existentes = new java.util.HashSet<>();
+                // Cargar materiales existentes para evitar duplicados
+                for (var mat : servicioMaterial.listarCatalogo()) {
+                    existentes.add(mat.getNombre().trim().toLowerCase() + ";" + mat.getUnidad().trim().toLowerCase());
+                }
+                boolean primeraLinea = true;
+                while ((line = br.readLine()) != null) {
+                    if (line.trim().isEmpty())
+                        continue;
+                    String[] parts = line.split(";");
+                    if (primeraLinea) { // saltar encabezado
+                        primeraLinea = false;
+                        if (parts[1].toLowerCase().contains("descripcion"))
+                            continue;
+                    }
+                    if (parts.length < 4) {
+                        errores++;
+                        continue;
+                    }
+                    String nombre = parts[1].trim();
+                    String unidad = parts[2].trim();
+                    String precioStr = parts[3].trim().replace(".", "").replace(",", ".");
+                    double precio;
+                    try {
+                        precio = Double.parseDouble(precioStr);
+                    } catch (NumberFormatException ex) {
+                        errores++;
+                        continue;
+                    }
+                    String clave = nombre.toLowerCase() + ";" + unidad.toLowerCase();
+                    if (existentes.contains(clave)) {
+                        duplicados++;
+                        continue;
+                    }
+                    servicioMaterial.crearEnCatalogo(nombre, unidad, precio);
+                    existentes.add(clave);
+                    count++;
+                }
+                JOptionPane.showMessageDialog(this,
+                        "Importados: " + count + " | Duplicados: " + duplicados + " | Errores: " + errores);
+                cargarCatalogo();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Error al importar: " + ex.getMessage());
+            }
+        }
+
     }
 
     private JPanel crearPanelAsignados() {
@@ -93,7 +164,7 @@ public class VentanaMateriales extends JFrame {
 
     public void cargarCatalogo() {
         List<Material> catalogo = servicioMaterial.listarCatalogo();
-        String[] columnas = {"ID", "Descripción", "Unidad", "Precio", "Acción"};
+        String[] columnas = { "ID", "Descripción", "Unidad", "Precio", "Acción" };
         DefaultTableModel modelo = new DefaultTableModel(columnas, 0) {
             public boolean isCellEditable(int row, int column) {
                 return column == 4;
@@ -101,7 +172,7 @@ public class VentanaMateriales extends JFrame {
         };
 
         for (Material m : catalogo) {
-            modelo.addRow(new Object[]{
+            modelo.addRow(new Object[] {
                     m.getId(),
                     m.getNombre(),
                     "-", // Puedes actualizar si hay unidad
@@ -131,12 +202,12 @@ public class VentanaMateriales extends JFrame {
 
     private void cargarMaterialesAsignados() {
         List<Material> materiales = servicioMaterial.listarPorActividad(actividadId);
-        String[] columnas = {"ID", "Descripción", "Cantidad", "Precio Unitario", "Subtotal"};
+        String[] columnas = { "ID", "Descripción", "Cantidad", "Precio Unitario", "Subtotal" };
         DefaultTableModel modelo = new DefaultTableModel(columnas, 0);
 
         for (Material m : materiales) {
             double subtotal = m.getCantidad() * m.getPrecioUnitario();
-            modelo.addRow(new Object[]{
+            modelo.addRow(new Object[] {
                     m.getId(),
                     m.getNombre(),
                     m.getCantidad(),
@@ -148,4 +219,3 @@ public class VentanaMateriales extends JFrame {
         tablaAsignados.setModel(modelo);
     }
 }
-

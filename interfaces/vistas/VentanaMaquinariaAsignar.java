@@ -41,16 +41,31 @@ public class VentanaMaquinariaAsignar extends JFrame {
 
     private JPanel crearPanelCatalogo() {
         JPanel panel = new JPanel(new BorderLayout());
+        JPanel topPanel = new JPanel(new BorderLayout());
         JTextField txtBuscar = new JTextField();
+        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton btnNuevo = new JButton("Nueva Maquinaria");
+        JButton btnImportar = new JButton("Importar Maquinaria");
+        panelBotones.add(btnNuevo);
+        panelBotones.add(btnImportar);
+
+        topPanel.add(txtBuscar, BorderLayout.CENTER);
+        topPanel.add(panelBotones, BorderLayout.EAST);
+
         tablaCatalogo = new JTable();
         cargarCatalogo();
 
-        JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.add(txtBuscar, BorderLayout.CENTER);
-        panel.add(topPanel, BorderLayout.NORTH);
-
         JScrollPane scroll = new JScrollPane(tablaCatalogo);
+
+        panel.add(topPanel, BorderLayout.NORTH);
         panel.add(scroll, BorderLayout.CENTER);
+
+        btnNuevo.addActionListener(e -> {
+            // Aquí podrías abrir un diálogo para agregar maquinaria manualmente
+            cargarCatalogo();
+        });
+
+        btnImportar.addActionListener(e -> importarMaquinariaDesdeCSV());
 
         txtBuscar.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
             public void insertUpdate(javax.swing.event.DocumentEvent e) {
@@ -72,7 +87,64 @@ public class VentanaMaquinariaAsignar extends JFrame {
                 sorter.setRowFilter(RowFilter.regexFilter("(?i)" + texto));
             }
         });
+
         return panel;
+    }
+
+    private void importarMaquinariaDesdeCSV() {
+        JFileChooser fileChooser = new JFileChooser();
+        int result = fileChooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            java.io.File file = fileChooser.getSelectedFile();
+            try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(file))) {
+                String line;
+                int count = 0, duplicados = 0, errores = 0;
+                java.util.Set<String> existentes = new java.util.HashSet<>();
+                for (var maq : servicio.listar()) {
+                    existentes.add(
+                            maq.getDescripcion().trim().toLowerCase() + ";" + maq.getUnidad().trim().toLowerCase());
+                }
+                boolean primeraLinea = true;
+                while ((line = br.readLine()) != null) {
+                    if (line.trim().isEmpty())
+                        continue;
+                    String[] parts = line.split(";");
+                    if (primeraLinea) {
+                        primeraLinea = false;
+                        if (parts[1].toLowerCase().contains("descripcion"))
+                            continue;
+                    }
+                    if (parts.length < 3) {
+                        errores++;
+                        continue;
+                    }
+                    String descripcion = parts[1].trim();
+                    String unidad = parts[2].trim();
+                    String precioStr = parts.length > 3 ? parts[3].trim().replace(".", "").replace(",", ".") : "0";
+                    double precio;
+                    try {
+                        precio = Double.parseDouble(precioStr);
+                    } catch (NumberFormatException ex) {
+                        errores++;
+                        continue;
+                    }
+                    String clave = descripcion.toLowerCase() + ";" + unidad.toLowerCase();
+                    if (existentes.contains(clave)) {
+                        duplicados++;
+                        continue;
+                    }
+                    servicio.agregar(descripcion, unidad, precio);
+                    existentes.add(clave);
+                    count++;
+                }
+                JOptionPane.showMessageDialog(this,
+                        "Importados: " + count + " | Duplicados: " + duplicados + " | Errores: " + errores);
+                cargarCatalogo();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Error al importar: " + ex.getMessage());
+            }
+        }
+
     }
 
     private JPanel crearPanelAsignados() {
