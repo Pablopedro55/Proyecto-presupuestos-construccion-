@@ -99,9 +99,22 @@ public class VentanaManoObraAsignar extends JFrame {
         tablaCatalogo = new JTable();
         cargarCatalogo();
 
+        // Panel superior con búsqueda y botones de acción
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.add(txtBuscar, BorderLayout.CENTER);
+        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton btnNuevo = new JButton("Nueva Mano de Obra");
+        JButton btnImportar = new JButton("Importar Mano de Obra");
+        panelBotones.add(btnNuevo);
+        panelBotones.add(btnImportar);
+        topPanel.add(panelBotones, BorderLayout.EAST);
         panel.add(topPanel, BorderLayout.NORTH);
+
+        btnNuevo.addActionListener(e -> {
+            new DialogoNuevaManoObra(servicio, this).setVisible(true);
+            cargarCatalogo();
+        });
+        btnImportar.addActionListener(e -> importarManoObraDesdeCSV());
 
         JScrollPane scroll = new JScrollPane(tablaCatalogo);
         panel.add(scroll, BorderLayout.CENTER);
