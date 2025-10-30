@@ -12,4 +12,12 @@ public class ConexionBD {
         String clave = "pablopedro55";
         return DriverManager.getConnection(url, usuario, clave);
     }
+
+    // Conexión específica para pruebas de integración
+    public static Connection conectarTest() throws SQLException {
+        String url = "jdbc:postgresql://localhost:5432/presupuestos_test";
+        String usuario = "postgres";
+        String clave = "pablopedro55";
+        return DriverManager.getConnection(url, usuario, clave);
+    }
 }
