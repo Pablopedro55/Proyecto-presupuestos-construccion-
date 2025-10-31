@@ -342,9 +342,10 @@ public class VentanaActividades extends JFrame {
         int fila = tablaActividades.getSelectedRow();
         if (fila != -1) {
             try {
+                int actividadId = Integer.parseInt(tablaActividades.getValueAt(fila, 0).toString());
                 String descripcion = tablaActividades.getValueAt(fila, 1).toString();
                 double costo = Double.parseDouble(tablaActividades.getValueAt(fila, 2).toString().replace(",", ""));
-                new VentanaDetalleActividad(descripcion, costo).setVisible(true);
+                new VentanaDetalleActividad(actividadId, descripcion, costo).setVisible(true);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Error al abrir detalle: " + ex.getMessage());
             }
