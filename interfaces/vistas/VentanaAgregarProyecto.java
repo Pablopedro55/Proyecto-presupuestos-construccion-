@@ -18,7 +18,7 @@ public class VentanaAgregarProyecto extends JDialog {
         this.servicio = servicio;
         this.ventanaPrincipal = ventanaPrincipal;
 
-        setSize(500, 300);
+        setSize(500, 400);
         setLocationRelativeTo(ventanaPrincipal);
         setResizable(false);
 

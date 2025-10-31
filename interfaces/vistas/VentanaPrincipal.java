@@ -10,7 +10,6 @@ import java.util.List;
 import aplicacion.ServicioProyecto;
 import aplicacion.ServicioMaterial;
 import dominio.Proyecto;
-import infraestructura.configuracion.ConexionBD;
 import infraestructura.mysql.RepositorioProyectosMySQL;
 import infraestructura.mysql.RepositorioMaterialesMySQL;
 import interfaces.theme.Theme;

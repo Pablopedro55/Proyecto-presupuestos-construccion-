@@ -22,7 +22,7 @@ public class ButtonEditor extends DefaultCellEditor {
     }
 
     public Component getTableCellEditorComponent(JTable table, Object value,
-                                                 boolean isSelected, int row, int column) {
+            boolean isSelected, int row, int column) {
         this.row = row;
         label = (value == null) ? "Añadir" : value.toString();
         button.setText(label);

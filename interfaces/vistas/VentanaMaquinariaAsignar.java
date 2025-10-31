@@ -3,8 +3,10 @@ package interfaces.vistas;
 
 import aplicacion.ServicioMaquinaria;
 import dominio.Maquinaria;
+import interfaces.theme.Theme;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
@@ -20,45 +22,105 @@ public class VentanaMaquinariaAsignar extends JFrame {
         this.servicio = servicio;
         this.actividadId = actividadId;
 
-        setTitle("Maquinaria para Actividad #" + actividadId);
-        setSize(850, 520);
+        setTitle("Maquinaria - Actividad #" + actividadId);
+        setSize(1000, 600);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
+        // Panel principal con fondo celeste
+        JPanel mainPanel = new JPanel(new BorderLayout(0, 0));
+        mainPanel.setBackground(Theme.CYAN_VERY_LIGHT);
+
+        // Header
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(Theme.BLUE_PRIMARY);
+        header.setBorder(new EmptyBorder(16, 32, 16, 32));
+
+        JLabel titleLabel = new JLabel("🚜 Gestión de Maquinaria - Actividad #" + actividadId);
+        titleLabel.setFont(Theme.FONT_TITLE);
+        titleLabel.setForeground(Theme.WHITE);
+
+        header.add(titleLabel, BorderLayout.WEST);
+
+        // Tabs estilizados
         JTabbedPane tabs = new JTabbedPane();
-        tabs.addTab("Catálogo", crearPanelCatalogo());
-        tabs.addTab("Asignados", crearPanelAsignados());
+        tabs.setFont(Theme.FONT_NORMAL);
+        tabs.setBackground(Theme.CYAN_VERY_LIGHT);
+        tabs.setBorder(new EmptyBorder(16, 16, 16, 16));
 
-        JButton btnVolver = new JButton("Volver");
+        tabs.addTab("📋 Catálogo de Maquinaria", crearPanelCatalogo());
+        tabs.addTab("✓ Maquinaria Asignada", crearPanelAsignados());
+
+        // Panel inferior con botón volver
+        JPanel panelInferior = new JPanel(new FlowLayout(FlowLayout.RIGHT, 16, 12));
+        panelInferior.setBackground(Theme.CYAN_VERY_LIGHT);
+
+        JButton btnVolver = Theme.createSecondaryButton("← Volver");
         btnVolver.addActionListener(e -> dispose());
-
-        JPanel panelInferior = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         panelInferior.add(btnVolver);
 
-        add(tabs, BorderLayout.CENTER);
-        add(panelInferior, BorderLayout.SOUTH);
+        mainPanel.add(header, BorderLayout.NORTH);
+        mainPanel.add(tabs, BorderLayout.CENTER);
+        mainPanel.add(panelInferior, BorderLayout.SOUTH);
+
+        add(mainPanel);
     }
 
     private JPanel crearPanelCatalogo() {
-        JPanel panel = new JPanel(new BorderLayout());
-        JPanel topPanel = new JPanel(new BorderLayout());
+        JPanel panel = new JPanel(new BorderLayout(0, 16));
+        panel.setBackground(Theme.CYAN_VERY_LIGHT);
+        panel.setBorder(new EmptyBorder(16, 16, 16, 16));
+
+        // Panel superior con búsqueda y botones
+        JPanel topPanel = new JPanel(new BorderLayout(12, 0));
+        topPanel.setOpaque(false);
+
+        // Campo de búsqueda
         JTextField txtBuscar = new JTextField();
-        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton btnNuevo = new JButton("Nueva Maquinaria");
-        JButton btnImportar = new JButton("Importar Maquinaria");
+        txtBuscar.setFont(Theme.FONT_NORMAL);
+        txtBuscar.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Theme.GRAY_BORDER, 1),
+                new EmptyBorder(8, 12, 8, 12)));
+        txtBuscar.setPreferredSize(new Dimension(300, 40));
+
+        JPanel searchPanel = new JPanel(new BorderLayout());
+        searchPanel.setOpaque(false);
+        searchPanel.add(txtBuscar, BorderLayout.CENTER);
+
+        // Botones de acción
+        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        panelBotones.setOpaque(false);
+
+        JButton btnNuevo = Theme.createPrimaryButton("➕ Nueva Maquinaria");
+        JButton btnImportar = Theme.createSecondaryButton("📥 Importar CSV");
+
         panelBotones.add(btnNuevo);
         panelBotones.add(btnImportar);
 
-        topPanel.add(txtBuscar, BorderLayout.CENTER);
+        topPanel.add(searchPanel, BorderLayout.CENTER);
         topPanel.add(panelBotones, BorderLayout.EAST);
 
+        // Tabla del catálogo
+        JPanel tablePanel = Theme.createCard();
+        tablePanel.setLayout(new BorderLayout());
+
+        JLabel tableTitle = new JLabel("Catálogo de Maquinaria Disponible");
+        tableTitle.setFont(Theme.FONT_HEADING);
+        tableTitle.setForeground(Theme.GRAY_TEXT);
+        tableTitle.setBorder(new EmptyBorder(0, 0, 12, 0));
+
         tablaCatalogo = new JTable();
+        Theme.styleTable(tablaCatalogo);
         cargarCatalogo();
 
         JScrollPane scroll = new JScrollPane(tablaCatalogo);
+        scroll.setBorder(null);
+
+        tablePanel.add(tableTitle, BorderLayout.NORTH);
+        tablePanel.add(scroll, BorderLayout.CENTER);
 
         panel.add(topPanel, BorderLayout.NORTH);
-        panel.add(scroll, BorderLayout.CENTER);
+        panel.add(tablePanel, BorderLayout.CENTER);
 
         btnNuevo.addActionListener(e -> {
             // Aquí podrías abrir un diálogo para agregar maquinaria manualmente
@@ -148,17 +210,37 @@ public class VentanaMaquinariaAsignar extends JFrame {
     }
 
     private JPanel crearPanelAsignados() {
-        JPanel panel = new JPanel(new BorderLayout());
+        JPanel panel = new JPanel(new BorderLayout(0, 16));
+        panel.setBackground(Theme.CYAN_VERY_LIGHT);
+        panel.setBorder(new EmptyBorder(16, 16, 16, 16));
+
+        // Card con la tabla
+        JPanel tablePanel = Theme.createCard();
+        tablePanel.setLayout(new BorderLayout());
+
+        JLabel tableTitle = new JLabel("Maquinaria Asignada a esta Actividad");
+        tableTitle.setFont(Theme.FONT_HEADING);
+        tableTitle.setForeground(Theme.GRAY_TEXT);
+        tableTitle.setBorder(new EmptyBorder(0, 0, 12, 0));
+
         tablaAsignados = new JTable();
+        Theme.styleTable(tablaAsignados);
         cargarAsignados();
+
         JScrollPane scroll = new JScrollPane(tablaAsignados);
-        panel.add(scroll, BorderLayout.CENTER);
+        scroll.setBorder(null);
+
+        tablePanel.add(tableTitle, BorderLayout.NORTH);
+        tablePanel.add(scroll, BorderLayout.CENTER);
+
+        panel.add(tablePanel, BorderLayout.CENTER);
+
         return panel;
     }
 
     public void cargarCatalogo() {
         List<Maquinaria> catalogo = servicio.listar();
-        String[] columnas = { "ID", "Descripción", "Unidad", "Precio", "Acción" };
+        String[] columnas = { "ID", "Descripción", "Unidad", "Precio (Bs)", "Acción" };
         DefaultTableModel modelo = new DefaultTableModel(columnas, 0) {
             public boolean isCellEditable(int row, int column) {
                 return column == 4;
@@ -169,11 +251,13 @@ public class VentanaMaquinariaAsignar extends JFrame {
                     m.getId(),
                     m.getDescripcion(),
                     m.getUnidad(),
-                    "$" + m.getPrecioUnitario(),
+                    String.format("%.2f", m.getPrecioUnitario()),
                     "Añadir"
             });
         }
         tablaCatalogo.setModel(modelo);
+        Theme.styleTable(tablaCatalogo);
+
         tablaCatalogo.getColumn("Acción").setCellRenderer(new ButtonRenderer());
         tablaCatalogo.getColumn("Acción").setCellEditor(new ButtonEditor(new JCheckBox(), (fila) -> {
             int catalogoId = (int) tablaCatalogo.getValueAt(fila, 0);
@@ -182,12 +266,21 @@ public class VentanaMaquinariaAsignar extends JFrame {
             if (input != null && !input.isEmpty()) {
                 try {
                     double cantidad = Double.parseDouble(input);
-                    // Guardar en la base de datos la asignación de maquinaria a la actividad
+                    if (cantidad <= 0) {
+                        JOptionPane.showMessageDialog(this, "La cantidad debe ser mayor a 0", "Error",
+                                JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
                     servicio.agregarMaquinariaAsignada(actividadId, catalogoId, cantidad);
                     cargarAsignados();
-                    JOptionPane.showMessageDialog(this, "Maquinaria añadida correctamente.");
+                    JOptionPane.showMessageDialog(this, "✓ Maquinaria añadida correctamente", "Éxito",
+                            JOptionPane.INFORMATION_MESSAGE);
                 } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(this, "Cantidad inválida.");
+                    JOptionPane.showMessageDialog(this, "Cantidad inválida", "Error",
+                            JOptionPane.ERROR_MESSAGE);
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Error",
+                            JOptionPane.ERROR_MESSAGE);
                 }
             }
         }));
@@ -195,18 +288,22 @@ public class VentanaMaquinariaAsignar extends JFrame {
 
     private void cargarAsignados() {
         List<dominio.MaquinariaAsignada> asignados = servicio.listarPorActividad(actividadId);
-        String[] columnas = { "ID", "Descripción", "Cantidad", "Precio Unitario", "Subtotal" };
+        String[] columnas = { "ID", "Descripción", "Cantidad", "Precio Unitario (Bs)", "Subtotal (Bs)" };
         DefaultTableModel modelo = new DefaultTableModel(columnas, 0);
+
+        double totalGeneral = 0;
         for (dominio.MaquinariaAsignada m : asignados) {
             double subtotal = m.getCantidad() * m.getPrecioUnitario();
+            totalGeneral += subtotal;
             modelo.addRow(new Object[] {
                     m.getId(),
                     m.getDescripcion(),
-                    m.getCantidad(),
-                    "$" + m.getPrecioUnitario(),
-                    "$" + subtotal
+                    String.format("%.2f", m.getCantidad()),
+                    String.format("%.2f", m.getPrecioUnitario()),
+                    String.format("%.2f", subtotal)
             });
         }
         tablaAsignados.setModel(modelo);
+        Theme.styleTable(tablaAsignados);
     }
 }

@@ -21,8 +21,11 @@ public class RepositorioProyectosMySQL implements RepositorioProyectos {
             ps.setString(1, proyecto.getNombre());
             ps.setDouble(2, proyecto.getPresupuesto());
             ps.executeUpdate();
+            System.out.println("✅ Proyecto guardado: " + proyecto.getNombre() + " - Bs " + proyecto.getPresupuesto());
         } catch (SQLException e) {
+            System.err.println("❌ Error al guardar proyecto: " + e.getMessage());
             e.printStackTrace();
+            throw new RuntimeException("Error al guardar proyecto: " + e.getMessage(), e);
         }
     }
 

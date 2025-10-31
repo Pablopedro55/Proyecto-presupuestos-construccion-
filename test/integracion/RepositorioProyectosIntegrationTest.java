@@ -8,9 +8,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
+import dominio.Proyecto;
 import infraestructura.configuracion.ConexionBD;
 import infraestructura.mysql.RepositorioProyectosMySQL;
-import dominio.Proyecto;
 
 /**
  * Pruebas de integración para RepositorioProyectosMySQL
