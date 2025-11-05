@@ -33,10 +33,11 @@ public class RepositorioActividadesMySQL implements RepositorioActividades {
     public void guardar(Actividad actividad, int proyectoId) {
         try {
             PreparedStatement ps = conexion.prepareStatement(
-                    "INSERT INTO actividades (descripcion, costo, proyecto_id) VALUES (?, ?, ?)");
+                    "INSERT INTO actividades (descripcion, costo, proyecto_id, estado) VALUES (?, ?, ?, ?)");
             ps.setString(1, actividad.getDescripcion());
             ps.setDouble(2, actividad.getCosto());
             ps.setInt(3, proyectoId);
+            ps.setString(4, actividad.getEstado() != null ? actividad.getEstado() : "Pendiente");
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -52,6 +53,13 @@ public class RepositorioActividadesMySQL implements RepositorioActividades {
             while (rs.next()) {
                 Actividad a = new Actividad(rs.getString("descripcion"), rs.getDouble("costo"));
                 a.setId(rs.getInt("id"));
+
+                // Leer estado de la base de datos
+                String estado = rs.getString("estado");
+                if (estado != null) {
+                    a.setEstado(estado);
+                }
+
                 lista.add(a);
             }
         } catch (SQLException e) {
@@ -70,6 +78,13 @@ public class RepositorioActividadesMySQL implements RepositorioActividades {
             while (rs.next()) {
                 Actividad a = new Actividad(rs.getString("descripcion"), rs.getDouble("costo"));
                 a.setId(rs.getInt("id"));
+
+                // Leer estado de la base de datos
+                String estado = rs.getString("estado");
+                if (estado != null) {
+                    a.setEstado(estado);
+                }
+
                 lista.add(a);
             }
         } catch (SQLException e) {
@@ -106,5 +121,18 @@ public class RepositorioActividadesMySQL implements RepositorioActividades {
             e.printStackTrace();
         }
         return total;
+    }
+
+    public void actualizarEstado(int actividadId, String nuevoEstado) {
+        try {
+            PreparedStatement ps = conexion.prepareStatement("UPDATE actividades SET estado = ? WHERE id = ?");
+            ps.setString(1, nuevoEstado);
+            ps.setInt(2, actividadId);
+            ps.executeUpdate();
+            System.out.println("✅ Estado de actividad actualizado a: " + nuevoEstado);
+        } catch (SQLException e) {
+            System.err.println("❌ Error al actualizar estado de actividad: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }

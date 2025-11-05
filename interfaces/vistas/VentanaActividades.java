@@ -16,7 +16,7 @@ public class VentanaActividades extends JFrame {
     private JTable tablaActividades;
     private JLabel lblPresupuestoTotal, lblPresupuestoEjecutado, lblDiferencia, lblPorcentaje;
     private JButton btnNuevaActividad, btnVerDetalle, btnMateriales, btnEjecutar, btnManoObra, btnMaquinaria,
-            btnVerEjecucion;
+            btnVerEjecucion, btnCambiarEstado;
     private ServicioPresupuesto servicio;
     private ServicioMaterial servicioMaterial;
     private ServicioManoObra servicioManoObra;
@@ -67,6 +67,7 @@ public class VentanaActividades extends JFrame {
 
         btnNuevaActividad
                 .addActionListener(e -> new VentanaAgregarActividad(servicio, proyectoId, this).setVisible(true));
+        btnCambiarEstado.addActionListener(e -> cambiarEstadoActividad());
         btnVerDetalle.addActionListener(e -> abrirDetalle());
         btnMateriales.addActionListener(e -> abrirMateriales());
         btnEjecutar.addActionListener(e -> new VentanaEjecutarActividad(proyectoId, this).setVisible(true));
@@ -203,11 +204,13 @@ public class VentanaActividades extends JFrame {
         toolbar.setLayout(new FlowLayout(FlowLayout.LEFT, 8, 0));
 
         btnNuevaActividad = Theme.createPrimaryButton("➕ Agregar Actividad");
+        btnCambiarEstado = Theme.createSecondaryButton("🔄 Cambiar Estado");
         btnEjecutar = Theme.createSuccessButton("▶️ Ejecutar Actividad");
         btnVerEjecucion = Theme.createSecondaryButton("📈 Ver Ejecución Presupuesto");
         btnVerEjecucion.setForeground(Theme.BLUE_SECONDARY);
 
         toolbar.add(btnNuevaActividad);
+        toolbar.add(btnCambiarEstado);
         toolbar.add(btnEjecutar);
         toolbar.add(btnVerEjecucion);
 
@@ -263,7 +266,8 @@ public class VentanaActividades extends JFrame {
             return;
 
         List<Actividad> actividades = servicio.listarPorProyecto(proyectoId);
-        String[] columnas = { "ID", "Descripción", "Costo unitario (Bs)", "Ejecuciones", "Total Ejecutado (Bs)" };
+        String[] columnas = { "ID", "Descripción", "Estado", "Costo unitario (Bs)", "Ejecuciones",
+                "Total Ejecutado (Bs)" };
         DefaultTableModel modelo = new DefaultTableModel(columnas, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -283,6 +287,7 @@ public class VentanaActividades extends JFrame {
             modelo.addRow(new Object[] {
                     a.getId(),
                     a.getDescripcion(),
+                    a.getEstado() != null ? a.getEstado() : "Pendiente",
                     String.format("%.2f", costoTotal),
                     ejecuciones,
                     String.format("%.2f", total)
@@ -293,6 +298,7 @@ public class VentanaActividades extends JFrame {
         tablaActividades.setModel(modelo);
         Theme.styleTable(tablaActividades);
         tablaActividades.getColumnModel().getColumn(0).setPreferredWidth(50);
+        tablaActividades.getColumnModel().getColumn(2).setPreferredWidth(100); // Estado
 
         double presupuestoProyecto = obtenerPresupuestoProyecto();
         double diferencia = presupuestoProyecto - totalEjecutado;
@@ -385,6 +391,50 @@ public class VentanaActividades extends JFrame {
             new VentanaMaquinariaAsignar(servicioMaquinaria, actividadId).setVisible(true);
         } else {
             JOptionPane.showMessageDialog(this, "Seleccione una actividad para gestionar maquinaria");
+        }
+    }
+
+    private void cambiarEstadoActividad() {
+        int fila = tablaActividades.getSelectedRow();
+        if (fila == -1) {
+            JOptionPane.showMessageDialog(this,
+                    "Por favor, seleccione una actividad de la tabla",
+                    "Aviso",
+                    JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        int actividadId = Integer.parseInt(tablaActividades.getValueAt(fila, 0).toString());
+        String estadoActual = tablaActividades.getValueAt(fila, 2).toString();
+
+        // Opciones de estado
+        String[] estados = { "Pendiente", "En Progreso", "Completada" };
+
+        // Mostrar diálogo de selección
+        String nuevoEstado = (String) JOptionPane.showInputDialog(
+                this,
+                "Estado actual: " + estadoActual + "\n\nSeleccione el nuevo estado:",
+                "Cambiar Estado de Actividad",
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                estados,
+                estadoActual);
+
+        if (nuevoEstado != null && !nuevoEstado.equals(estadoActual)) {
+            try {
+                // Usar el servicio con validación
+                servicio.cambiarEstadoActividad(actividadId, nuevoEstado);
+                JOptionPane.showMessageDialog(this,
+                        "✅ Estado actualizado a: " + nuevoEstado,
+                        "Éxito",
+                        JOptionPane.INFORMATION_MESSAGE);
+                cargarActividades(); // Recargar tabla
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this,
+                        "❌ Error al actualizar estado: " + ex.getMessage(),
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 }

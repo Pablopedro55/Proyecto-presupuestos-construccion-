@@ -7,7 +7,7 @@
 # Si tienes alguna carpeta de compilación adicional, como target o build, también se puede agregar:
 target/
 build/
-
+NIVEL_2_PLAN.md
 # Ignorar la carpeta agregada para diseños de Figma
 /diseñoFigma/
 

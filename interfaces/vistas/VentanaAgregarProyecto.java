@@ -2,14 +2,23 @@
 package interfaces.vistas;
 
 import aplicacion.ServicioProyecto;
+import dominio.Proyecto;
 import interfaces.theme.Theme;
 
 import javax.swing.*;
 import java.awt.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 public class VentanaAgregarProyecto extends JDialog {
     private JTextField txtNombre;
     private JTextField txtPresupuesto;
+    private JTextField txtCliente;
+    private JTextField txtUbicacion;
+    private JTextField txtFechaInicio;
+    private JTextField txtFechaFin;
+    private JComboBox<String> cmbTipoObra;
     private ServicioProyecto servicio;
     private VentanaPrincipal ventanaPrincipal;
 
@@ -18,7 +27,7 @@ public class VentanaAgregarProyecto extends JDialog {
         this.servicio = servicio;
         this.ventanaPrincipal = ventanaPrincipal;
 
-        setSize(500, 400);
+        setSize(550, 650);
         setLocationRelativeTo(ventanaPrincipal);
         setResizable(false);
 
@@ -33,72 +42,105 @@ public class VentanaAgregarProyecto extends JDialog {
         titleLabel.setForeground(Theme.BLUE_PRIMARY);
         titleLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
 
-        // Panel de formulario
+        // Panel de formulario con scroll
         JPanel formPanel = new JPanel(new GridBagLayout());
         formPanel.setBackground(Theme.WHITE);
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(8, 0, 8, 0);
-
-        // Label Nombre
-        JLabel lblNombre = new JLabel("Nombre del Proyecto:");
-        lblNombre.setFont(Theme.FONT_NORMAL);
-        lblNombre.setForeground(Theme.GRAY_TEXT);
-        gbc.gridx = 0;
-        gbc.gridy = 0;
         gbc.weightx = 1.0;
-        formPanel.add(lblNombre, gbc);
 
-        // TextField Nombre
-        txtNombre = new JTextField();
-        txtNombre.setFont(Theme.FONT_NORMAL);
-        txtNombre.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(Theme.GRAY_BORDER, 1),
-                BorderFactory.createEmptyBorder(10, 12, 10, 12)));
-        txtNombre.addFocusListener(new java.awt.event.FocusAdapter() {
-            public void focusGained(java.awt.event.FocusEvent evt) {
-                txtNombre.setBorder(BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(Theme.BLUE_SECONDARY, 2),
-                        BorderFactory.createEmptyBorder(9, 11, 9, 11)));
-            }
+        int row = 0;
 
-            public void focusLost(java.awt.event.FocusEvent evt) {
-                txtNombre.setBorder(BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(Theme.GRAY_BORDER, 1),
-                        BorderFactory.createEmptyBorder(10, 12, 10, 12)));
-            }
-        });
-        gbc.gridy = 1;
+        // === CAMPO: Nombre del Proyecto ===
+        gbc.gridx = 0;
+        gbc.gridy = row++;
+        formPanel.add(crearLabel("Nombre del Proyecto: *"), gbc);
+
+        txtNombre = crearTextField();
+        gbc.gridy = row++;
         formPanel.add(txtNombre, gbc);
 
-        // Label Presupuesto
-        JLabel lblPresupuesto = new JLabel("Presupuesto (Bs):");
-        lblPresupuesto.setFont(Theme.FONT_NORMAL);
-        lblPresupuesto.setForeground(Theme.GRAY_TEXT);
-        gbc.gridy = 2;
-        formPanel.add(lblPresupuesto, gbc);
+        // === CAMPO: Cliente ===
+        gbc.gridy = row++;
+        formPanel.add(crearLabel("Cliente / Contratante: *"), gbc);
 
-        // TextField Presupuesto
-        txtPresupuesto = new JTextField();
-        txtPresupuesto.setFont(Theme.FONT_NORMAL);
-        txtPresupuesto.setBorder(BorderFactory.createCompoundBorder(
+        txtCliente = crearTextField();
+        gbc.gridy = row++;
+        formPanel.add(txtCliente, gbc);
+
+        // === CAMPO: Ubicación ===
+        gbc.gridy = row++;
+        formPanel.add(crearLabel("Ubicación de la Obra: *"), gbc);
+
+        txtUbicacion = crearTextField();
+        gbc.gridy = row++;
+        formPanel.add(txtUbicacion, gbc);
+
+        // === CAMPO: Tipo de Obra ===
+        gbc.gridy = row++;
+        formPanel.add(crearLabel("Tipo de Obra: *"), gbc);
+
+        String[] tiposObra = {
+                "Seleccionar...",
+                "Edificación",
+                "Vial",
+                "Hidráulica",
+                "Sanitaria",
+                "Eléctrica",
+                "Infraestructura",
+                "Otra"
+        };
+        cmbTipoObra = new JComboBox<>(tiposObra);
+        cmbTipoObra.setFont(Theme.FONT_NORMAL);
+        cmbTipoObra.setBackground(Theme.WHITE);
+        cmbTipoObra.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(Theme.GRAY_BORDER, 1),
-                BorderFactory.createEmptyBorder(10, 12, 10, 12)));
-        txtPresupuesto.addFocusListener(new java.awt.event.FocusAdapter() {
-            public void focusGained(java.awt.event.FocusEvent evt) {
-                txtPresupuesto.setBorder(BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(Theme.BLUE_SECONDARY, 2),
-                        BorderFactory.createEmptyBorder(9, 11, 9, 11)));
-            }
+                BorderFactory.createEmptyBorder(8, 8, 8, 8)));
+        gbc.gridy = row++;
+        formPanel.add(cmbTipoObra, gbc);
 
-            public void focusLost(java.awt.event.FocusEvent evt) {
-                txtPresupuesto.setBorder(BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(Theme.GRAY_BORDER, 1),
-                        BorderFactory.createEmptyBorder(10, 12, 10, 12)));
-            }
-        });
-        gbc.gridy = 3;
+        // === CAMPO: Presupuesto ===
+        gbc.gridy = row++;
+        formPanel.add(crearLabel("Presupuesto (Bs): *"), gbc);
+
+        txtPresupuesto = crearTextField();
+        gbc.gridy = row++;
         formPanel.add(txtPresupuesto, gbc);
+
+        // === CAMPO: Fecha Inicio ===
+        gbc.gridy = row++;
+        JLabel lblFechaInicio = crearLabel("Fecha de Inicio (DD/MM/AAAA):");
+        lblFechaInicio.setForeground(Theme.GRAY_MUTED);
+        formPanel.add(lblFechaInicio, gbc);
+
+        txtFechaInicio = crearTextField();
+        txtFechaInicio.setText(LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+        gbc.gridy = row++;
+        formPanel.add(txtFechaInicio, gbc);
+
+        // === CAMPO: Fecha Fin ===
+        gbc.gridy = row++;
+        JLabel lblFechaFin = crearLabel("Fecha de Fin Estimada (DD/MM/AAAA):");
+        lblFechaFin.setForeground(Theme.GRAY_MUTED);
+        formPanel.add(lblFechaFin, gbc);
+
+        txtFechaFin = crearTextField();
+        gbc.gridy = row++;
+        formPanel.add(txtFechaFin, gbc);
+
+        // Nota de campos obligatorios
+        JLabel lblNota = new JLabel("* Campos obligatorios");
+        lblNota.setFont(new Font("Segoe UI", Font.ITALIC, 11));
+        lblNota.setForeground(Theme.GRAY_MUTED);
+        gbc.gridy = row++;
+        gbc.insets = new Insets(16, 0, 0, 0);
+        formPanel.add(lblNota, gbc);
+
+        // Scroll para el formulario
+        JScrollPane scrollPane = new JScrollPane(formPanel);
+        scrollPane.setBorder(null);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
         // Panel de botones
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
@@ -108,7 +150,7 @@ public class VentanaAgregarProyecto extends JDialog {
         JButton btnCancelar = Theme.createSecondaryButton("Cancelar");
         btnCancelar.addActionListener(e -> dispose());
 
-        JButton btnGuardar = Theme.createPrimaryButton("Guardar");
+        JButton btnGuardar = Theme.createPrimaryButton("Guardar Proyecto");
         btnGuardar.addActionListener(e -> guardarProyecto());
 
         buttonPanel.add(btnCancelar);
@@ -116,7 +158,7 @@ public class VentanaAgregarProyecto extends JDialog {
 
         // Agregar todo al panel principal
         mainPanel.add(titleLabel, BorderLayout.NORTH);
-        mainPanel.add(formPanel, BorderLayout.CENTER);
+        mainPanel.add(scrollPane, BorderLayout.CENTER);
         mainPanel.add(buttonPanel, BorderLayout.SOUTH);
 
         add(mainPanel);
@@ -125,64 +167,145 @@ public class VentanaAgregarProyecto extends JDialog {
         getRootPane().setDefaultButton(btnGuardar);
     }
 
+    private JLabel crearLabel(String texto) {
+        JLabel label = new JLabel(texto);
+        label.setFont(Theme.FONT_NORMAL);
+        label.setForeground(Theme.GRAY_TEXT);
+        return label;
+    }
+
+    private JTextField crearTextField() {
+        JTextField textField = new JTextField();
+        textField.setFont(Theme.FONT_NORMAL);
+        textField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Theme.GRAY_BORDER, 1),
+                BorderFactory.createEmptyBorder(10, 12, 10, 12)));
+        textField.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                textField.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(Theme.BLUE_SECONDARY, 2),
+                        BorderFactory.createEmptyBorder(9, 11, 9, 11)));
+            }
+
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                textField.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(Theme.GRAY_BORDER, 1),
+                        BorderFactory.createEmptyBorder(10, 12, 10, 12)));
+            }
+        });
+        return textField;
+    }
+
     private void guardarProyecto() {
         String nombre = txtNombre.getText().trim();
+        String cliente = txtCliente.getText().trim();
+        String ubicacion = txtUbicacion.getText().trim();
+        String tipoObra = (String) cmbTipoObra.getSelectedItem();
         String presupuestoStr = txtPresupuesto.getText().trim();
+        String fechaInicioStr = txtFechaInicio.getText().trim();
+        String fechaFinStr = txtFechaFin.getText().trim();
 
-        // Validaciones
+        // === VALIDACIONES DE CAMPOS OBLIGATORIOS ===
         if (nombre.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                    "El nombre del proyecto es obligatorio",
-                    "Error de validación",
-                    JOptionPane.ERROR_MESSAGE);
-            txtNombre.requestFocus();
+            mostrarError("El nombre del proyecto es obligatorio", txtNombre);
+            return;
+        }
+
+        if (cliente.isEmpty()) {
+            mostrarError("El cliente es obligatorio", txtCliente);
+            return;
+        }
+
+        if (ubicacion.isEmpty()) {
+            mostrarError("La ubicación es obligatoria", txtUbicacion);
+            return;
+        }
+
+        if (tipoObra == null || tipoObra.equals("Seleccionar...")) {
+            mostrarError("Debe seleccionar un tipo de obra", null);
+            cmbTipoObra.requestFocus();
             return;
         }
 
         if (presupuestoStr.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                    "El presupuesto es obligatorio",
-                    "Error de validación",
-                    JOptionPane.ERROR_MESSAGE);
-            txtPresupuesto.requestFocus();
+            mostrarError("El presupuesto es obligatorio", txtPresupuesto);
             return;
         }
 
         try {
+            // Validar presupuesto
             double presupuesto = Double.parseDouble(presupuestoStr);
-
             if (presupuesto <= 0) {
-                JOptionPane.showMessageDialog(this,
-                        "El presupuesto debe ser mayor a 0",
-                        "Error de validación",
-                        JOptionPane.ERROR_MESSAGE);
-                txtPresupuesto.requestFocus();
+                mostrarError("El presupuesto debe ser mayor a 0", txtPresupuesto);
                 return;
             }
 
-            // Guardar proyecto
-            servicio.agregarProyecto(nombre, presupuesto);
+            // Parsear fechas (opcionales)
+            LocalDate fechaInicio = null;
+            LocalDate fechaFin = null;
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+            if (!fechaInicioStr.isEmpty()) {
+                try {
+                    fechaInicio = LocalDate.parse(fechaInicioStr, formatter);
+                } catch (DateTimeParseException e) {
+                    mostrarError("Formato de fecha de inicio inválido. Use DD/MM/AAAA", txtFechaInicio);
+                    return;
+                }
+            }
+
+            if (!fechaFinStr.isEmpty()) {
+                try {
+                    fechaFin = LocalDate.parse(fechaFinStr, formatter);
+
+                    // Validar que fecha fin sea posterior a fecha inicio
+                    if (fechaInicio != null && fechaFin.isBefore(fechaInicio)) {
+                        mostrarError("La fecha de fin debe ser posterior a la fecha de inicio", txtFechaFin);
+                        return;
+                    }
+                } catch (DateTimeParseException e) {
+                    mostrarError("Formato de fecha de fin inválido. Use DD/MM/AAAA", txtFechaFin);
+                    return;
+                }
+            }
+
+            // Crear objeto Proyecto con todos los datos
+            Proyecto proyecto = new Proyecto(nombre, presupuesto, cliente, ubicacion,
+                    fechaInicio, fechaFin, tipoObra);
+
+            // Guardar en base de datos
+            servicio.agregarProyecto(proyecto);
             ventanaPrincipal.cargarProyectos();
 
             // Mensaje de éxito
             JOptionPane.showMessageDialog(this,
-                    "Proyecto guardado exitosamente",
+                    "Proyecto guardado exitosamente\n\n" +
+                            "Cliente: " + cliente + "\n" +
+                            "Ubicación: " + ubicacion + "\n" +
+                            "Tipo: " + tipoObra,
                     "Éxito",
                     JOptionPane.INFORMATION_MESSAGE);
 
             dispose();
 
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this,
-                    "El presupuesto debe ser un número válido",
-                    "Error de validación",
-                    JOptionPane.ERROR_MESSAGE);
-            txtPresupuesto.requestFocus();
+            mostrarError("El presupuesto debe ser un número válido", txtPresupuesto);
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this,
                     "Error al guardar: " + ex.getMessage(),
                     "Error",
                     JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+        }
+    }
+
+    private void mostrarError(String mensaje, JTextField campo) {
+        JOptionPane.showMessageDialog(this,
+                mensaje,
+                "Error de validación",
+                JOptionPane.ERROR_MESSAGE);
+        if (campo != null) {
+            campo.requestFocus();
         }
     }
 }

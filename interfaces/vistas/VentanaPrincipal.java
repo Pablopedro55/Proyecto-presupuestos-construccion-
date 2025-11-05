@@ -17,7 +17,7 @@ import interfaces.theme.Theme;
 public class VentanaPrincipal extends JFrame {
 
     private JTable tablaProyectos;
-    private JButton btnNuevoProyecto, btnVerProyecto;
+    private JButton btnNuevoProyecto, btnVerProyecto, btnEditarProyecto;
     private JTextField txtBuscar;
     private ServicioProyecto servicio;
     private ServicioMaterial servicioMaterial;
@@ -51,6 +51,7 @@ public class VentanaPrincipal extends JFrame {
         }
 
         btnNuevoProyecto.addActionListener(e -> new VentanaAgregarProyecto(servicio, this).setVisible(true));
+        btnEditarProyecto.addActionListener(e -> editarProyecto());
         btnVerProyecto.addActionListener(e -> abrirDetalle());
 
         cargarProyectos();
@@ -152,9 +153,11 @@ public class VentanaPrincipal extends JFrame {
         botonesPanel.setOpaque(false);
 
         btnNuevoProyecto = Theme.createPrimaryButton("➕ Nuevo Proyecto");
-        btnVerProyecto = Theme.createSecondaryButton("👁️ Ver Proyecto");
+        btnEditarProyecto = Theme.createSecondaryButton("✏️ Editar");
+        btnVerProyecto = Theme.createSecondaryButton("👁️ Ver Actividades");
 
         botonesPanel.add(btnNuevoProyecto);
+        botonesPanel.add(btnEditarProyecto);
         botonesPanel.add(btnVerProyecto);
 
         toolbar.add(txtBuscar, BorderLayout.WEST);
@@ -201,7 +204,7 @@ public class VentanaPrincipal extends JFrame {
             return;
 
         List<Proyecto> proyectos = servicio.listar();
-        String[] columnas = { "ID", "Nombre del Proyecto", "Presupuesto" };
+        String[] columnas = { "ID", "Nombre del Proyecto", "Cliente", "Tipo de Obra", "Presupuesto", "Estado" };
         DefaultTableModel modelo = new DefaultTableModel(columnas, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -210,11 +213,15 @@ public class VentanaPrincipal extends JFrame {
         };
 
         for (Proyecto p : proyectos) {
-            if (p.getNombre().toLowerCase().contains(textoBusqueda.toLowerCase())) {
+            if (p.getNombre().toLowerCase().contains(textoBusqueda.toLowerCase()) ||
+                    (p.getCliente() != null && p.getCliente().toLowerCase().contains(textoBusqueda.toLowerCase()))) {
                 modelo.addRow(new Object[] {
                         p.getId(),
                         p.getNombre(),
-                        "Bs " + String.format("%,.2f", p.getPresupuesto())
+                        p.getCliente() != null ? p.getCliente() : "Sin cliente",
+                        p.getTipoObra() != null ? p.getTipoObra() : "No especificado",
+                        "Bs " + String.format("%,.2f", p.getPresupuesto()),
+                        p.getEstado() != null ? p.getEstado() : "Planificación"
                 });
             }
         }
@@ -228,7 +235,7 @@ public class VentanaPrincipal extends JFrame {
             return;
 
         List<Proyecto> proyectos = servicio.listar();
-        String[] columnas = { "ID", "Nombre del Proyecto", "Presupuesto" };
+        String[] columnas = { "ID", "Nombre del Proyecto", "Cliente", "Tipo de Obra", "Presupuesto", "Estado" };
         DefaultTableModel modelo = new DefaultTableModel(columnas, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -237,13 +244,23 @@ public class VentanaPrincipal extends JFrame {
         };
 
         double presupuestoTotal = 0;
+        int proyectosEnEjecucion = 0;
+
         for (Proyecto p : proyectos) {
             modelo.addRow(new Object[] {
                     p.getId(),
                     p.getNombre(),
-                    "Bs " + String.format("%,.2f", p.getPresupuesto())
+                    p.getCliente() != null ? p.getCliente() : "Sin cliente",
+                    p.getTipoObra() != null ? p.getTipoObra() : "No especificado",
+                    "Bs " + String.format("%,.2f", p.getPresupuesto()),
+                    p.getEstado() != null ? p.getEstado() : "Planificación"
             });
             presupuestoTotal += p.getPresupuesto();
+
+            // Contar proyectos en ejecución
+            if (p.getEstado() != null && p.getEstado().equals("En Ejecución")) {
+                proyectosEnEjecucion++;
+            }
         }
 
         tablaProyectos.setModel(modelo);
@@ -252,15 +269,19 @@ public class VentanaPrincipal extends JFrame {
         // Actualizar estadísticas
         lblTotalProyectos.setText(String.valueOf(proyectos.size()));
         lblPresupuestoTotal.setText("Bs " + String.format("%,.2f", presupuestoTotal));
-        lblProyectosEjecucion.setText(String.valueOf(proyectos.size()));
+        lblProyectosEjecucion.setText(String.valueOf(proyectosEnEjecucion));
     }
 
     private void configurarColumnasTabla() {
-        // Configurar anchos de columnas
-        tablaProyectos.getColumnModel().getColumn(0).setPreferredWidth(50);
+        // Configurar anchos de columnas: ID | Nombre | Cliente | Tipo | Presupuesto |
+        // Estado
+        tablaProyectos.getColumnModel().getColumn(0).setPreferredWidth(50); // ID
         tablaProyectos.getColumnModel().getColumn(0).setMaxWidth(50);
-        tablaProyectos.getColumnModel().getColumn(1).setPreferredWidth(500);
-        tablaProyectos.getColumnModel().getColumn(2).setPreferredWidth(200);
+        tablaProyectos.getColumnModel().getColumn(1).setPreferredWidth(280); // Nombre
+        tablaProyectos.getColumnModel().getColumn(2).setPreferredWidth(200); // Cliente
+        tablaProyectos.getColumnModel().getColumn(3).setPreferredWidth(130); // Tipo de Obra
+        tablaProyectos.getColumnModel().getColumn(4).setPreferredWidth(150); // Presupuesto
+        tablaProyectos.getColumnModel().getColumn(5).setPreferredWidth(120); // Estado
     }
 
     private void abrirDetalle() {
@@ -271,6 +292,17 @@ public class VentanaPrincipal extends JFrame {
             new VentanaActividades(idProyecto, nombre).setVisible(true);
         } else {
             JOptionPane.showMessageDialog(this, "Seleccione un proyecto", "Aviso", JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    private void editarProyecto() {
+        int fila = tablaProyectos.getSelectedRow();
+        if (fila != -1) {
+            int idProyecto = (int) tablaProyectos.getValueAt(fila, 0);
+            new VentanaEditarProyecto(servicio, this, idProyecto).setVisible(true);
+        } else {
+            JOptionPane.showMessageDialog(this, "Seleccione un proyecto para editar", "Aviso",
+                    JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
